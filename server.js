@@ -19,24 +19,17 @@ const P_VALUE_HOTELLOOK = '4115';
 const CAMPAIGN_ID_AVIASALES = '100';
 const CAMPAIGN_ID_HOTELLOOK = '101';
 
-// 4. Настройка CORS для "живого" сайта
-const allowedOrigins = [
-  'http://localhost:5173',     // Для нашей локальной разработки
-  'https://vputi.netlify.app' // <<< ТВОЙ "ЖИВОЙ" АДРЕС САЙТА
-];
-
-const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  }
-};
+// 4. Логирование статуса токена при старте
+console.log(
+    'Статус API токена Travelpayouts (первые 5 символов):', 
+    (TRAVELPAYOUTS_API_TOKEN) 
+        ? TRAVELPAYOUTS_API_TOKEN.substring(0, 5) + '...' 
+        : 'ТОКЕН НЕ УСТАНОВЛЕН!'
+);
 
 // 5. Подключение middleware
-app.use(cors(corsOptions)); 
+// ВРЕМЕННО РАЗРЕШАЕМ ЗАПРОСЫ СО ВСЕХ ИСТОЧНИКОВ ДЛЯ ДИАГНОСТИКИ
+app.use(cors()); 
 app.use(express.json());
 
 // --- Начало Маршрутов API ---
