@@ -10,11 +10,10 @@ const querystring = require('querystring');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// 3. Конфигурация (API Токен и Партнерский Маркер)
-const TRAVELPAYOUTS_API_TOKEN = process.env.TRAVELPAYOUTS_API_TOKEN; // Берется с хостинга Render
+// 3. Конфигурация
+const TRAVELPAYOUTS_API_TOKEN = process.env.TRAVELPAYOUTS_API_TOKEN;
 const YOUR_PARTNER_MARKER = '636492'; 
 const TRS_VALUE = '422197';
-// ID Программ и Кампаний
 const P_VALUE_AVIASALES = '4114';     
 const P_VALUE_HOTELLOOK = '4115';
 const CAMPAIGN_ID_AVIASALES = '100';
@@ -22,8 +21,8 @@ const CAMPAIGN_ID_HOTELLOOK = '101';
 
 // 4. Настройка CORS для "живого" сайта
 const allowedOrigins = [
-  'http://localhost:5173', // Для нашей локальной разработки
-  'https://6845f4691753823884288741--clever-salmiakki-90c811.netlify.app' // Твой "живой" сайт на Netlify
+  'http://localhost:5173',     // Для нашей локальной разработки
+  'https://vputi.netlify.app' // <<< ТВОЙ "ЖИВОЙ" АДРЕС САЙТА
 ];
 
 const corsOptions = {
@@ -49,27 +48,17 @@ app.get('/', (req, res) => {
 
 // 7. Маршрут для поиска цен на авиабилеты
 app.get('/api/test-flight-prices', async (req, res) => {
-    if (!TRAVELPAYOUTS_API_TOKEN) {
-        return res.status(500).json({ message: 'Ошибка конфигурации сервера: API токен не настроен.' });
-    } 
+    if (!TRAVELPAYOUTS_API_TOKEN) { return res.status(500).json({ message: 'Ошибка конфигурации сервера: API токен не настроен.' }); } 
     const { origin, destination, departure_at } = req.query;
-    if (!origin || !destination || !departure_at) {
-        return res.status(400).json({ message: 'Необходимы параметры origin, destination и departure_at' });
-    }
+    if (!origin || !destination || !departure_at) { return res.status(400).json({ message: 'Необходимы параметры origin, destination и departure_at' }); }
     const currency = req.query.currency || 'rub';
     const limit = parseInt(req.query.limit) || 30;
     const flightPricesApiUrl = `https://api.travelpayouts.com/aviasales/v3/prices_for_dates`;
-    
     try {
-        console.log(`Запрос к Aviasales API (${flightPricesApiUrl}) по маршруту ${origin} -> ${destination} на ${departure_at}`);
         const response = await axios.get(flightPricesApiUrl, {
-            params: {
-                origin, destination, departure_at, currency, limit,
-                token: TRAVELPAYOUTS_API_TOKEN
-            },
+            params: { origin, destination, departure_at, currency, limit, token: TRAVELPAYOUTS_API_TOKEN },
             timeout: 15000 
         }); 
-        console.log("Ответ от Aviasales API (цены на даты) получен успешно!");
         res.json(response.data); 
     } catch (error) {
         const errorMessage = error.response ? `Статус: ${error.response.status}, Тело ответа: ${JSON.stringify(error.response.data)}` : `Ошибка Axios: ${error.message}`;
@@ -85,39 +74,26 @@ app.get('/api/test-flight-prices', async (req, res) => {
 // 8. Маршрут для генерации deeplink для авиабилетов
 app.post('/api/generate-flight-deeplink', (req, res) => {
     const { aviasales_relative_link } = req.body; 
-    if (!aviasales_relative_link) {
-        return res.status(400).json({ message: 'Параметр "aviasales_relative_link" обязателен.' });
-    }
+    if (!aviasales_relative_link) { return res.status(400).json({ message: 'Параметр "aviasales_relative_link" обязателен.' }); }
     const targetUrl = `https://www.aviasales.ru${aviasales_relative_link}`; 
     const encodedTargetUrl = encodeURIComponent(targetUrl);
     const deeplinkParams = {
-        marker: YOUR_PARTNER_MARKER,
-        trs: TRS_VALUE,
-        p: P_VALUE_AVIASALES,
-        u: encodedTargetUrl,
-        campaign_id: CAMPAIGN_ID_AVIASALES
+        marker: YOUR_PARTNER_MARKER, trs: TRS_VALUE, p: P_VALUE_AVIASALES,
+        u: encodedTargetUrl, campaign_id: CAMPAIGN_ID_AVIASALES
     };
     const affiliateDeeplink = `https://tp.media/r?${querystring.stringify(deeplinkParams)}`;
-    console.log('Сгенерирован Deeplink для Aviasales:', affiliateDeeplink);
     res.json({ success: true, deeplink: affiliateDeeplink });
 });
 
-// 9. Маршрут для автодополнения мест (городов/аэропортов)
+// 9. Маршрут для автодополнения мест
 app.get('/api/suggest-places-autocomplete', async (req, res) => {
     const { term, locale = 'ru' } = req.query;
-    if (!TRAVELPAYOUTS_API_TOKEN) {
-        return res.status(500).json({ message: 'Ошибка конфигурации сервера: API токен не настроен.' });
-    }
-    if (!term) {
-        return res.status(400).json({ message: 'Параметр "term" (поисковый запрос) обязателен.' });
-    }
+    if (!TRAVELPAYOUTS_API_TOKEN) { return res.status(500).json({ message: 'Ошибка конфигурации сервера: API токен не настроен.' }); }
+    if (!term) { return res.status(400).json({ message: 'Параметр "term" (поисковый запрос) обязателен.' }); }
     const placesApiUrl = `https://api.travelpayouts.com/data/${locale}/cities.json`;
     try {
-        console.log(`Запрос к Travelpayouts Data API (СПИСОК ГОРОДОВ): ${placesApiUrl}`);
         const response = await axios.get(placesApiUrl, { params: { token: TRAVELPAYOUTS_API_TOKEN } });
-        console.log("Полный список городов получен успешно! Начинаем фильтрацию...");
         const suggestions = response.data.filter(city => city.name && city.name.toLowerCase().startsWith(term.toLowerCase())).slice(0, 7);
-        console.log(`Найдено ${suggestions.length} подсказок для "${term}"`);
         res.json(suggestions);
     } catch (error) {
         const errorMessage = error.response ? `Статус: ${error.response.status}, Тело ответа: ${JSON.stringify(error.response.data)}` : error.message;
@@ -126,16 +102,14 @@ app.get('/api/suggest-places-autocomplete', async (req, res) => {
     }
 });
 
-// 10. Маршрут для генерации deeplink для Отелей (Hotellook)
+// 10. Маршрут для генерации deeplink для Отелей
 app.post('/api/generate-hotel-deeplink', (req, res) => {
     const { cityId, destinationName, checkIn, checkOut, adults } = req.body;
-    if (!cityId || !checkIn || !checkOut || !adults) {
-        return res.status(400).json({ message: 'Не все обязательные параметры были переданы.' });
-    }
+    if (!cityId || !checkIn || !checkOut || !adults) { return res.status(400).json({ message: 'Не все обязательные параметры были переданы.' }); }
     const hotellookTargetParams = {
-        adults: adults, checkIn: checkIn, checkOut: checkOut,
-        cityId: cityId, currency: 'rub', destination: destinationName,
-        language: 'ru', marker: `${YOUR_PARTNER_MARKER}._hotels` 
+        adults, checkIn, checkOut, cityId, 
+        currency: 'rub', destination: destinationName, language: 'ru', 
+        marker: `${YOUR_PARTNER_MARKER}._hotels` 
     };
     const targetUrl = `https://search.hotellook.com/hotels?${querystring.stringify(hotellookTargetParams)}`;
     const encodedTargetUrl = encodeURIComponent(targetUrl);
@@ -144,7 +118,6 @@ app.post('/api/generate-hotel-deeplink', (req, res) => {
         u: encodedTargetUrl, campaign_id: CAMPAIGN_ID_HOTELLOOK
     };
     const affiliateDeeplink = `https://tp.media/r?${querystring.stringify(affiliateDeeplinkParams)}`;
-    console.log('Сгенерирован Deeplink для Hotellook:', affiliateDeeplink);
     res.json({ success: true, deeplink: affiliateDeeplink });
 });
 
