@@ -10,8 +10,8 @@ const querystring = require('querystring');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// 3. Конфигурация
-const TRAVELPAYOUTS_API_TOKEN = '2db25a770b8322d049195f68fdf77f9b';
+// 3. Конфигурация (API Токен и Партнерский Маркер)
+const TRAVELPAYOUTS_API_TOKEN = process.env.TRAVELPAYOUTS_API_TOKEN; // Берется с хостинга Render
 const YOUR_PARTNER_MARKER = '636492'; 
 const TRS_VALUE = '422197';
 // ID Программ и Кампаний
@@ -20,28 +20,36 @@ const P_VALUE_HOTELLOOK = '4115';
 const CAMPAIGN_ID_AVIASALES = '100';
 const CAMPAIGN_ID_HOTELLOOK = '101';
 
-// 4. Логирование статуса токена при старте
-console.log(
-    'Статус API токена Travelpayouts (первые 5 символов):', 
-    (TRAVELPAYOUTS_API_TOKEN && TRAVELPAYOUTS_API_TOKEN !== 'СЮДА_ВСТАВЬ_СВОЙ_РЕАЛЬНЫЙ_НОВЫЙ_API_ТОКЕН') 
-        ? TRAVELPAYOUTS_API_TOKEN.substring(0, 5) + '...' 
-        : 'ТОКЕН НЕ УСТАНОВЛЕН ИЛИ ОСТАЛСЯ ПЛЕЙСХОЛДЕР!'
-);
+// 4. Настройка CORS для "живого" сайта
+const allowedOrigins = [
+  'http://localhost:5173', // Для нашей локальной разработки
+  'https://6845f4691753823884288741--clever-salmiakki-90c811.netlify.app' // Твой "живой" сайт на Netlify
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
+};
 
 // 5. Подключение middleware
-app.use(cors()); 
+app.use(cors(corsOptions)); 
 app.use(express.json());
 
 // --- Начало Маршрутов API ---
 
 // 6. Тестовый маршрут GET /
 app.get('/', (req, res) => {
-    res.send('Привет! Бэкенд "ВПути.ру" запущен!');
+    res.send('Привет! Бэкенд "ВПути.ру" запущен и готов к работе!');
 });
 
 // 7. Маршрут для поиска цен на авиабилеты
 app.get('/api/test-flight-prices', async (req, res) => {
-    if (!TRAVELPAYOUTS_API_TOKEN || TRAVELPAYOUTS_API_TOKEN === 'СЮДА_ВСТАВЬ_СВОЙ_РЕАЛЬНЫЙ_НОВЫЙ_API_ТОКЕН') {
+    if (!TRAVELPAYOUTS_API_TOKEN) {
         return res.status(500).json({ message: 'Ошибка конфигурации сервера: API токен не настроен.' });
     } 
     const { origin, destination, departure_at } = req.query;
@@ -51,15 +59,15 @@ app.get('/api/test-flight-prices', async (req, res) => {
     const currency = req.query.currency || 'rub';
     const limit = parseInt(req.query.limit) || 30;
     const flightPricesApiUrl = `https://api.travelpayouts.com/aviasales/v3/prices_for_dates`;
+    
     try {
         console.log(`Запрос к Aviasales API (${flightPricesApiUrl}) по маршруту ${origin} -> ${destination} на ${departure_at}`);
         const response = await axios.get(flightPricesApiUrl, {
             params: {
-                origin: origin, destination: destination, departure_at: departure_at,
-                currency: currency, limit: limit,
+                origin, destination, departure_at, currency, limit,
                 token: TRAVELPAYOUTS_API_TOKEN
             },
-            timeout: 15000
+            timeout: 15000 
         }); 
         console.log("Ответ от Aviasales API (цены на даты) получен успешно!");
         res.json(response.data); 
@@ -97,7 +105,7 @@ app.post('/api/generate-flight-deeplink', (req, res) => {
 // 9. Маршрут для автодополнения мест (городов/аэропортов)
 app.get('/api/suggest-places-autocomplete', async (req, res) => {
     const { term, locale = 'ru' } = req.query;
-    if (!TRAVELPAYOUTS_API_TOKEN || TRAVELPAYOUTS_API_TOKEN === 'СЮДА_ВСТАВЬ_СВОЙ_РЕАЛЬНЫЙ_НОВЫЙ_API_ТОКЕН') {
+    if (!TRAVELPAYOUTS_API_TOKEN) {
         return res.status(500).json({ message: 'Ошибка конфигурации сервера: API токен не настроен.' });
     }
     if (!term) {
@@ -118,35 +126,24 @@ app.get('/api/suggest-places-autocomplete', async (req, res) => {
     }
 });
 
-// 10. НОВЫЙ МАРШРУТ для генерации deeplink для Отелей (Hotellook)
+// 10. Маршрут для генерации deeplink для Отелей (Hotellook)
 app.post('/api/generate-hotel-deeplink', (req, res) => {
     const { cityId, destinationName, checkIn, checkOut, adults } = req.body;
-
     if (!cityId || !checkIn || !checkOut || !adults) {
-        return res.status(400).json({ message: 'Не все обязательные параметры были переданы (cityId, checkIn, checkOut, adults).' });
+        return res.status(400).json({ message: 'Не все обязательные параметры были переданы.' });
     }
-
     const hotellookTargetParams = {
-        adults: adults,
-        checkIn: checkIn,
-        checkOut: checkOut,
-        cityId: cityId,
-        currency: 'rub',
-        destination: destinationName,
-        language: 'ru',
-        marker: `${YOUR_PARTNER_MARKER}._hotels` 
+        adults: adults, checkIn: checkIn, checkOut: checkOut,
+        cityId: cityId, currency: 'rub', destination: destinationName,
+        language: 'ru', marker: `${YOUR_PARTNER_MARKER}._hotels` 
     };
     const targetUrl = `https://search.hotellook.com/hotels?${querystring.stringify(hotellookTargetParams)}`;
     const encodedTargetUrl = encodeURIComponent(targetUrl);
     const affiliateDeeplinkParams = {
-        marker: YOUR_PARTNER_MARKER,
-        trs: TRS_VALUE,
-        p: P_VALUE_HOTELLOOK,
-        u: encodedTargetUrl,
-        campaign_id: CAMPAIGN_ID_HOTELLOOK
+        marker: YOUR_PARTNER_MARKER, trs: TRS_VALUE, p: P_VALUE_HOTELLOOK,
+        u: encodedTargetUrl, campaign_id: CAMPAIGN_ID_HOTELLOOK
     };
     const affiliateDeeplink = `https://tp.media/r?${querystring.stringify(affiliateDeeplinkParams)}`;
-
     console.log('Сгенерирован Deeplink для Hotellook:', affiliateDeeplink);
     res.json({ success: true, deeplink: affiliateDeeplink });
 });
@@ -157,10 +154,10 @@ app.post('/api/generate-hotel-deeplink', (req, res) => {
 // 11. Запуск сервера
 app.listen(PORT, () => { 
     console.log(`+++ Server is now listening on port: ${PORT} +++`);
-    if (!TRAVELPAYOUTS_API_TOKEN || TRAVELPAYOUTS_API_TOKEN === 'СЮДА_ВСТАВЬ_СВОЙ_РЕАЛЬНЫЙ_НОВЫЙ_API_ТОКЕН') {
-        console.warn('!!! WARNING: Token is NOT set or is a placeholder. API calls may fail. !!!');
+    if (!TRAVELPAYOUTS_API_TOKEN) {
+        console.warn('!!! WARNING: TRAVELPAYOUTS_API_TOKEN environment variable is not set. !!!');
     } else {
-        console.log('--- API Token seems to be correctly set. ---');
+        console.log('--- API Token is loaded from environment variables. ---');
     }
     console.log('--- VPUTI.RU Backend Ready ---');
 });
