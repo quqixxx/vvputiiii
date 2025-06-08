@@ -1,16 +1,13 @@
 // vputi-backend/server.js
 
-// 1. Подключение модулей
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
 const querystring = require('querystring'); 
 
-// 2. Инициализация Express приложения
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// 3. Конфигурация
 const TRAVELPAYOUTS_API_TOKEN = process.env.TRAVELPAYOUTS_API_TOKEN;
 const YOUR_PARTNER_MARKER = '636492'; 
 const TRS_VALUE = '422197';
@@ -23,7 +20,7 @@ const CAMPAIGN_ID_HOTELLOOK = '101';
 const allowedOrigins = [
   'http://localhost:5173',                         // Для нашей локальной разработки
   'https://vputi.netlify.app',                   // Наш основной "красивый" адрес
-  'https://superb-kelpie-fca21d.netlify.app'     // <<< ДОБАВЛЕН НОВЫЙ АДРЕС, С КОТОРОГО БЫЛА ОШИБКА
+  'https://superb-kelpie-fca21d.netlify.app'     // <<< ДОБАВЛЕН ТВОЙ НОВЫЙ АДРЕС, С КОТОРОГО БЫЛА ОШИБКА
 ];
 
 const corsOptions = {
@@ -42,12 +39,10 @@ app.use(express.json());
 
 // --- Начало Маршрутов API ---
 
-// 6. Тестовый маршрут GET /
 app.get('/', (req, res) => {
     res.send('Привет! Бэкенд "ВПути.ру" запущен и готов к работе!');
 });
 
-// 7. Маршрут для поиска цен на авиабилеты
 app.get('/api/test-flight-prices', async (req, res) => {
     if (!TRAVELPAYOUTS_API_TOKEN) { return res.status(500).json({ message: 'Ошибка конфигурации сервера: API токен не настроен.' }); } 
     const { origin, destination, departure_at } = req.query;
@@ -72,7 +67,6 @@ app.get('/api/test-flight-prices', async (req, res) => {
     } 
 });
 
-// 8. Маршрут для генерации deeplink для авиабилетов
 app.post('/api/generate-flight-deeplink', (req, res) => {
     const { aviasales_relative_link } = req.body; 
     if (!aviasales_relative_link) { return res.status(400).json({ message: 'Параметр "aviasales_relative_link" обязателен.' }); }
@@ -86,10 +80,9 @@ app.post('/api/generate-flight-deeplink', (req, res) => {
     res.json({ success: true, deeplink: affiliateDeeplink });
 });
 
-// 9. Маршрут для автодополнения мест
 app.get('/api/suggest-places-autocomplete', async (req, res) => {
-    const { term, locale = 'ru' } = req.query;
     if (!TRAVELPAYOUTS_API_TOKEN) { return res.status(500).json({ message: 'Ошибка конфигурации сервера: API токен не настроен.' }); }
+    const { term, locale = 'ru' } = req.query;
     if (!term) { return res.status(400).json({ message: 'Параметр "term" (поисковый запрос) обязателен.' }); }
     const placesApiUrl = `https://api.travelpayouts.com/data/${locale}/cities.json`;
     try {
@@ -103,7 +96,6 @@ app.get('/api/suggest-places-autocomplete', async (req, res) => {
     }
 });
 
-// 10. Маршрут для генерации deeplink для Отелей
 app.post('/api/generate-hotel-deeplink', (req, res) => {
     const { cityId, destinationName, checkIn, checkOut, adults } = req.body;
     if (!cityId || !checkIn || !checkOut || !adults) { return res.status(400).json({ message: 'Не все обязательные параметры были переданы.' }); }
@@ -122,10 +114,8 @@ app.post('/api/generate-hotel-deeplink', (req, res) => {
     res.json({ success: true, deeplink: affiliateDeeplink });
 });
 
-
 // --- Конец Маршрутов API ---
 
-// 11. Запуск сервера
 app.listen(PORT, () => { 
     console.log(`+++ Server is now listening on port: ${PORT} +++`);
     if (!TRAVELPAYOUTS_API_TOKEN) {
