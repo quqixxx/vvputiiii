@@ -1,16 +1,13 @@
 // vputi-backend/server.js
 
-// 1. Подключение модулей
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
 const querystring = require('querystring'); 
 
-// 2. Инициализация Express приложения
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// 3. Конфигурация
 const TRAVELPAYOUTS_API_TOKEN = process.env.TRAVELPAYOUTS_API_TOKEN;
 const YOUR_PARTNER_MARKER = '636492'; 
 const TRS_VALUE = '422197';
@@ -19,12 +16,11 @@ const P_VALUE_HOTELLOOK = '4115';
 const CAMPAIGN_ID_AVIASALES = '100';
 const CAMPAIGN_ID_HOTELLOOK = '101';
 
-// 4. Настройка CORS для "живого" сайта
+// Настройка CORS для "живого" сайта
 const allowedOrigins = [
-  'http://localhost:5173',                 // Для нашей локальной разработки
-  'https://vputi.netlify.app',               // Старый адрес на Netlify
-  'https://superb-kelpie-fca21d.netlify.app', // Старый адрес на Netlify
-  'https://app-puce-omega.vercel.app'        // <<< ДОБАВЛЕН ТВОЙ НОВЫЙ АДРЕС НА VERCEL
+  'http://localhost:5173',                 // Для локальной разработки
+  'https://visitruu.vercel.app',             // <<< ТВОЙ НОВЫЙ ОСНОВНОЙ АДРЕС
+  'https://visitruu-quqixs-projects.vercel.app' // <<< ТВОЙ НОВЫЙ ТЕХНИЧЕСКИЙ АДРЕС
 ];
 
 const corsOptions = {
@@ -37,11 +33,10 @@ const corsOptions = {
   }
 };
 
-// 5. Подключение middleware
 app.use(cors(corsOptions)); 
 app.use(express.json());
 
-// --- Начало Маршрутов API (весь код маршрутов остается без изменений) ---
+// --- МАРШРУТЫ API --- (весь код для них остается без изменений)
 
 app.get('/', (req, res) => {
     res.send('Привет! Бэкенд "ВПути.ру" запущен и готов к работе!');
@@ -118,10 +113,9 @@ app.post('/api/generate-hotel-deeplink', (req, res) => {
     res.json({ success: true, deeplink: affiliateDeeplink });
 });
 
-
 // --- Конец Маршрутов API ---
 
-// 11. Запуск сервера
+// Запуск сервера
 app.listen(PORT, () => { 
     console.log(`+++ Server is now listening on port: ${PORT} +++`);
     if (!TRAVELPAYOUTS_API_TOKEN) {
