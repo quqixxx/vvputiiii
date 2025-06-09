@@ -18,9 +18,8 @@ const CAMPAIGN_ID_HOTELLOOK = '101';
 
 // Настройка CORS для "живого" сайта
 const allowedOrigins = [
-  'http://localhost:5173',                      // Для локальной разработки
-  'https://app-puce-omega.vercel.app',          // <<< ТВОЙ НОВЫЙ ОСНОВНОЙ АДРЕС
-  'https://app-quqixs-projects.vercel.app'    // <<< ТВОЙ НОВЫЙ ТЕХНИЧЕСКИЙ АДРЕС
+  'http://localhost:5173',               // Для нашей локальной разработки
+  'https://app-puce-omega.vercel.app'    // <<< ТВОЙ АКТУАЛЬНЫЙ АДРЕС НА VERCEL
 ];
 
 const corsOptions = {
