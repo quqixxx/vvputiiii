@@ -18,8 +18,10 @@ const CAMPAIGN_ID_HOTELLOOK = '101';
 
 // Настройка CORS для "живого" сайта
 const allowedOrigins = [
-  'http://localhost:5173',               // Для нашей локальной разработки
-  'https://app-puce-omega.vercel.app'    // <<< ТВОЙ АКТУАЛЬНЫЙ АДРЕС НА VERCEL
+  'http://localhost:5173',                 // Для локальной разработки
+  'https://visitruu.vercel.app',             // Твой основной адрес на Vercel
+  'https://app-puce-omega.vercel.app',       // Твой технический адрес на Vercel
+  'https://app-quqixs-projects.vercel.app' // Еще один твой технический адрес
 ];
 
 const corsOptions = {
@@ -115,7 +117,6 @@ app.post('/api/generate-hotel-deeplink', (req, res) => {
 
 // --- Конец Маршрутов API ---
 
-// Запуск сервера
 app.listen(PORT, () => { 
     console.log(`+++ Server is now listening on port: ${PORT} +++`);
     if (!TRAVELPAYOUTS_API_TOKEN) {
