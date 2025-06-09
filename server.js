@@ -18,9 +18,9 @@ const CAMPAIGN_ID_HOTELLOOK = '101';
 
 // Настройка CORS для "живого" сайта
 const allowedOrigins = [
-  'http://localhost:5173',                 // Для локальной разработки
-  'https://visitruu.vercel.app',             // <<< ТВОЙ НОВЫЙ ОСНОВНОЙ АДРЕС
-  'https://visitruu-quqixs-projects.vercel.app' // <<< ТВОЙ НОВЫЙ ТЕХНИЧЕСКИЙ АДРЕС
+  'http://localhost:5173',                      // Для локальной разработки
+  'https://app-puce-omega.vercel.app',          // <<< ТВОЙ НОВЫЙ ОСНОВНОЙ АДРЕС
+  'https://app-quqixs-projects.vercel.app'    // <<< ТВОЙ НОВЫЙ ТЕХНИЧЕСКИЙ АДРЕС
 ];
 
 const corsOptions = {
@@ -36,7 +36,7 @@ const corsOptions = {
 app.use(cors(corsOptions)); 
 app.use(express.json());
 
-// --- МАРШРУТЫ API --- (весь код для них остается без изменений)
+// --- МАРШРУТЫ API ---
 
 app.get('/', (req, res) => {
     res.send('Привет! Бэкенд "ВПути.ру" запущен и готов к работе!');
@@ -112,6 +112,7 @@ app.post('/api/generate-hotel-deeplink', (req, res) => {
     const affiliateDeeplink = `https://tp.media/r?${querystring.stringify(affiliateDeeplinkParams)}`;
     res.json({ success: true, deeplink: affiliateDeeplink });
 });
+
 
 // --- Конец Маршрутов API ---
 
