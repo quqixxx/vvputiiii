@@ -1,13 +1,16 @@
 // vputi-backend/server.js
 
+// 1. Подключение модулей
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
 const querystring = require('querystring'); 
 
+// 2. Инициализация Express приложения
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// 3. Конфигурация
 const TRAVELPAYOUTS_API_TOKEN = process.env.TRAVELPAYOUTS_API_TOKEN;
 const YOUR_PARTNER_MARKER = '636492'; 
 const TRS_VALUE = '422197';
@@ -18,9 +21,10 @@ const CAMPAIGN_ID_HOTELLOOK = '101';
 
 // 4. Настройка CORS для "живого" сайта
 const allowedOrigins = [
-  'http://localhost:5173',                         // Для нашей локальной разработки
-  'https://vputi.netlify.app',                   // Наш основной "красивый" адрес
-  'https://superb-kelpie-fca21d.netlify.app'     // <<< ДОБАВЛЕН ТВОЙ НОВЫЙ АДРЕС, С КОТОРОГО БЫЛА ОШИБКА
+  'http://localhost:5173',                 // Для нашей локальной разработки
+  'https://vputi.netlify.app',               // Старый адрес на Netlify
+  'https://superb-kelpie-fca21d.netlify.app', // Старый адрес на Netlify
+  'https://app-puce-omega.vercel.app'        // <<< ДОБАВЛЕН ТВОЙ НОВЫЙ АДРЕС НА VERCEL
 ];
 
 const corsOptions = {
@@ -37,7 +41,7 @@ const corsOptions = {
 app.use(cors(corsOptions)); 
 app.use(express.json());
 
-// --- Начало Маршрутов API ---
+// --- Начало Маршрутов API (весь код маршрутов остается без изменений) ---
 
 app.get('/', (req, res) => {
     res.send('Привет! Бэкенд "ВПути.ру" запущен и готов к работе!');
@@ -114,8 +118,10 @@ app.post('/api/generate-hotel-deeplink', (req, res) => {
     res.json({ success: true, deeplink: affiliateDeeplink });
 });
 
+
 // --- Конец Маршрутов API ---
 
+// 11. Запуск сервера
 app.listen(PORT, () => { 
     console.log(`+++ Server is now listening on port: ${PORT} +++`);
     if (!TRAVELPAYOUTS_API_TOKEN) {
